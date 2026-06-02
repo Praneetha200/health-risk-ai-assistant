@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Patient Details</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static',filename='style.css') }}"
+    >
+
+</head>
+<body>
+
+<div class="navbar">
+
+    <div class="logo">
+        🏥 Patient Profile
+    </div>
+
+    <a
+        href="/"
+        class="add-btn"
+    >
+        ← Back Dashboard
+    </a>
+
+</div>
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>
+            {{ patient.full_name }}
+        </h1>
+
+        <br>
+
+        <h3>Email</h3>
+        <p>{{ patient.email }}</p>
+
+        <br>
+
+        <h3>Date Of Birth</h3>
+        <p>{{ patient.dob }}</p>
+
+    </div>
+
+    <br>
+
+    <div class="stats">
+
+        <div class="card">
+
+            <h2>Glucose</h2>
+
+            <p>
+                {{ patient.glucose }}
+            </p>
+
+        </div>
+
+        <div class="card">
+
+            <h2>Haemoglobin</h2>
+
+            <p>
+                {{ patient.haemoglobin }}
+            </p>
+
+        </div>
+
+        <div class="card">
+
+            <h2>Cholesterol</h2>
+
+            <p>
+                {{ patient.cholesterol }}
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>
+            Risk Level
+        </h2>
+
+        <br>
+
+        {% if patient.risk_level == 'Low Risk' %}
+
+            <span class="low">
+                🟢 Low Risk
+            </span>
+
+        {% elif patient.risk_level == 'Medium Risk' %}
+
+            <span class="medium">
+                🟠 Medium Risk
+            </span>
+
+        {% else %}
+
+            <span class="high">
+                🔴 High Risk
+            </span>
+
+        {% endif %}
+
+        <br><br>
+
+        <h2>
+            Health Score
+        </h2>
+
+        <br>
+
+        <div class="score-bar">
+
+            <div
+                class="score-fill"
+                style="width:{{ patient.health_score }}%;"
+            >
+
+                {{ patient.health_score }}%
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <br>
+
+    <div class="card">
+
+        <h2>
+            🤖 AI Health Analysis
+        </h2>
+
+        <br>
+
+        <div class="remark-box">
+
+            {{ patient.remarks }}
+
+        </div>
+
+    </div>
+
+    <br><br>
+
+<a
+    href="/pdf/{{ patient.id }}"
+    class="add-btn"
+>
+    📄 Download PDF Report
+</a>
+
+</div>
+
+
+</body>
+</html>
+

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HealthRisk AI Assistant</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static',filename='style.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    {% if critical_patients|length > 0 %}
+
+<div class="alert-banner">
+
+    🚨 CRITICAL HEALTH ALERT
+
+    <br><br>
+
+    {% for patient in critical_patients %}
+
+        <div>
+
+            {{ patient.full_name }}
+
+            -
+
+            {{ patient.risk_level }}
+
+            (Score: {{ patient.health_score }})
+
+        </div>
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
+
+<div class="navbar">
+    <div class="logo">
+        🏥 HealthRisk AI
+    </div>
+
+    <a href="/add" class="add-btn">
+        + Add Patient
+    </a>
+</div>
+
+<div class="container">
+
+    <div class="stats">
+
+    <div class="card">
+        <h2>Total Patients</h2>
+        <p>{{ patients|length }}</p>
+    </div>
+
+    <div class="card">
+        <h2>🟢 Low Risk</h2>
+        <p>{{ low_count }}</p>
+    </div>
+
+    <div class="card">
+        <h2>🟠 Medium Risk</h2>
+        <p>{{ medium_count }}</p>
+    </div>
+
+    <div class="card">
+        <h2>🔴 High Risk</h2>
+        <p>{{ high_count }}</p>
+    </div>
+
+</div>
+
+    <div class="card" style="margin-bottom:30px;">
+
+    <h2 style="margin-bottom:20px;">
+        Risk Distribution
+    </h2>
+
+    <div class="chart-container">
+
+        <canvas id="riskChart"></canvas>
+
+    </div>
+
+</div>
+
+    <div class="table-container">
+
+        <h2 style="margin-bottom:20px;">
+            Patient Records
+        </h2>
+
+        <div style="margin-bottom:20px;">
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="🔍 Search Patient..."
+                onkeyup="searchPatients()"
+            >
+        </div>
+
+        <div class="filter-buttons">
+
+            <button onclick="filterRisk('all')">
+                All
+            </button>
+
+            <button onclick="filterRisk('Low Risk')">
+                Low Risk
+            </button>
+
+            <button onclick="filterRisk('Medium Risk')">
+                Medium Risk
+            </button>
+
+            <button onclick="filterRisk('High Risk')">
+                High Risk
+            </button>
+
+        </div>
+
+        <br>
+
+        <table>
+
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Risk</th>
+                <th>Score</th>
+                <th>AI Analysis</th>
+                <th>Actions</th>
+            </tr>
+
+            {% for patient in patients %}
+
+            <tr>
+
+                <td>
+            <a href="/patient/{{ patient.id }}" class="patient-link">
+                    {{ patient.full_name }}
+            </a>
+                </td>   
+
+                <td>{{ patient.email }}</td>
+
+                <td>
+
+                    {% if patient.risk_level == 'Low Risk' %}
+                        <span class="low">🟢 Low Risk</span>
+
+                    {% elif patient.risk_level == 'Medium Risk' %}
+                        <span class="medium">🟠 Medium Risk</span>
+
+                    {% else %}
+                        <span class="high">🔴 High Risk</span>
+                    {% endif %}
+
+                </td>
+
+                <td>
+
+    <div class="score-bar">
+
+        <div
+            class="score-fill"
+            style="width:{{ patient.health_score }}%;"
+        >
+            {{ patient.health_score }}%
+        </div>
+
+    </div>
+
+</td>
+
+                <td>
+
+                    <details>
+                        <summary>
+                            🤖 View AI Analysis
+                        </summary>
+
+                        <div class="remark-box">
+                            {{ patient.remarks }}
+                        </div>
+
+                    </details>
+
+                </td>
+
+                <td>
+
+                    <button
+                        type="button"
+                        class="delete-btn"
+                        onclick="openDeleteModal({{ patient.id }})"
+                    >
+                        🗑 Delete
+                    </button>
+
+                    <br><br>
+
+                    <a
+                        href="/edit/{{ patient.id }}"
+                        class="add-btn"
+                    >
+                        ✏ Edit
+                    </a>
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+</div>
+
+<div id="deleteModal" class="modal">
+
+    <div class="modal-content">
+
+        <h2>Delete Patient</h2>
+
+        <p>
+            Are you sure you want to delete this patient record?
+        </p>
+
+        <div class="modal-buttons">
+
+            <button
+                type="button"
+                class="cancel-btn"
+                onclick="closeDeleteModal()"
+            >
+                Cancel
+            </button>
+
+            <button
+                type="button"
+                id="confirmDeleteBtn"
+                class="confirm-delete-btn"
+            >
+                Delete
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+let selectedPatientId = null;
+
+function openDeleteModal(patientId){
+
+    selectedPatientId = patientId;
+
+    document.getElementById(
+        "deleteModal"
+    ).style.display = "flex";
+}
+
+function closeDeleteModal(){
+
+    document.getElementById(
+        "deleteModal"
+    ).style.display = "none";
+
+    selectedPatientId = null;
+}
+
+document
+.getElementById("confirmDeleteBtn")
+.addEventListener(
+    "click",
+    function(){
+
+        if(selectedPatientId){
+
+            window.location.href =
+                "/delete/" + selectedPatientId;
+        }
+    }
+);
+
+window.onclick = function(event){
+
+    const modal =
+        document.getElementById("deleteModal");
+
+    if(event.target === modal){
+
+        closeDeleteModal();
+    }
+}
+
+function searchPatients(){
+
+    let input =
+        document.getElementById("searchInput")
+            .value
+            .toLowerCase();
+
+    let rows =
+        document.querySelectorAll("table tr");
+
+    rows.forEach((row,index)=>{
+
+        if(index===0) return;
+
+        let name =
+            row.cells[0]
+            .innerText
+            .toLowerCase();
+
+        row.style.display =
+            name.includes(input)
+            ? ""
+            : "none";
+    });
+}
+
+function filterRisk(risk){
+
+    let rows =
+        document.querySelectorAll("table tr");
+
+    rows.forEach((row,index)=>{
+
+        if(index===0) return;
+
+        let riskText =
+            row.cells[2].innerText;
+
+        if(
+            risk==="all" ||
+            riskText.includes(risk)
+        ){
+            row.style.display="";
+        }
+        else{
+            row.style.display="none";
+        }
+    });
+}
+
+const ctx =
+document.getElementById("riskChart");
+
+new Chart(ctx, {
+
+    type: "pie",
+
+    data: {
+
+        labels: [
+            "Low Risk",
+            "Medium Risk",
+            "High Risk"
+        ],
+
+        datasets: [{
+
+            data: [
+                {{ low_count }},
+                {{ medium_count }},
+                {{ high_count }}
+            ],
+
+            backgroundColor: [
+                "#22c55e",
+                "#f59e0b",
+                "#ef4444"
+            ],
+
+            borderWidth: 2
+        }]
+    },
+
+    options: {
+
+        responsive: true,
+
+        maintainAspectRatio: true,
+
+        plugins: {
+
+            legend: {
+
+                position: "bottom"
+            }
+        }
+    }
+});
+
+</script>
+
+</body>
+</html>
+
