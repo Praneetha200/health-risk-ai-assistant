@@ -26,11 +26,13 @@ required
 >
 
 <input
-type="date"
-name="dob"
-value="{{ patient.dob }}"
-required
+    type="date"
+    name="dob"
+    value="{{ patient.dob }}"
+    max="{{ today }}"
+    required
 >
+
 
 <input
 type="email"

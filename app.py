@@ -1,7 +1,9 @@
-print("STEP 1: Starting app...")
+print("APP.PY UPDATED VERSION LOADED")
 
 from flask import Flask, render_template, request, redirect
 print("STEP 2: Flask imported")
+
+from datetime import datetime
 
 from models import db, Patient
 print("STEP 3: Models imported")
@@ -14,6 +16,7 @@ print("STEP 5: AI Service imported")
 
 from flask import send_file
 from reportlab.pdfgen import canvas
+import re
 
 from reportlab.platypus import (
     SimpleDocTemplate,
@@ -79,6 +82,9 @@ def dashboard():
     )
 
 
+
+
+
 @app.route("/add", methods=["GET", "POST"])
 def add_patient():
 
@@ -88,9 +94,44 @@ def add_patient():
         dob = request.form["dob"]
         email = request.form["email"]
 
+        # Email Validation
+        email_pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+
+        if not re.match(email_pattern, email):
+            return "Invalid Email Format"
+
+        # DOB Validation
+        print("DOB RECEIVED:", dob)
+
+        selected_date = datetime.strptime(
+            dob,
+            "%Y-%m-%d"
+        ).date()
+
+        today = datetime.now().date()
+
+        print("SELECTED DATE:", selected_date)
+        print("TODAY:", today)
+
+        if selected_date > today:
+
+            print("FUTURE DATE DETECTED")
+
+            return "Date of Birth cannot be in the future"
+
         glucose = float(request.form["glucose"])
         haemoglobin = float(request.form["haemoglobin"])
         cholesterol = float(request.form["cholesterol"])
+
+        # Numeric Validation
+        if glucose < 0:
+            return "Invalid Glucose Value"
+
+        if haemoglobin < 0:
+            return "Invalid Haemoglobin Value"
+
+        if cholesterol < 0:
+            return "Invalid Cholesterol Value"
 
         risk_level = predict_risk(
             glucose,
@@ -105,10 +146,10 @@ def add_patient():
         )
 
         remarks = generate_remark(
-           glucose,
-           haemoglobin,
-           cholesterol,
-           risk_level
+            glucose,
+            haemoglobin,
+            cholesterol,
+            risk_level
         )
 
         print("GEMINI RESPONSE:")
@@ -131,7 +172,13 @@ def add_patient():
 
         return redirect("/")
 
-    return render_template("add_patient.html")
+    return render_template(
+        "add_patient.html",
+        today=datetime.now().strftime("%Y-%m-%d")
+    )
+
+
+
 
 @app.route("/delete/<int:id>")
 def delete_patient(id):
@@ -144,6 +191,7 @@ def delete_patient(id):
 
     return redirect("/")
 
+
 @app.route("/edit/<int:id>", methods=["GET", "POST"])
 def edit_patient(id):
 
@@ -152,7 +200,20 @@ def edit_patient(id):
     if request.method == "POST":
 
         patient.full_name = request.form["full_name"]
-        patient.dob = request.form["dob"]
+
+        dob = request.form["dob"]
+
+        selected_date = datetime.strptime(
+            dob,
+            "%Y-%m-%d"
+        ).date()
+
+        if selected_date > datetime.now().date():
+
+            return "Date of Birth cannot be in the future"
+
+        patient.dob = dob
+
         patient.email = request.form["email"]
 
         patient.glucose = float(
@@ -185,10 +246,6 @@ def edit_patient(id):
             patient.cholesterol,
             patient.risk_level
         )
-        print("DOB:", patient.dob)
-        print("EMAIL:", patient.email)
-        print("HAEMOGLOBIN:", patient.haemoglobin)
-        print("CHOLESTEROL:", patient.cholesterol)
 
         db.session.commit()
 
@@ -196,8 +253,12 @@ def edit_patient(id):
 
     return render_template(
         "edit_patient.html",
-        patient=patient
+        patient=patient,
+        today=datetime.now().strftime("%Y-%m-%d")
     )
+
+
+
 
 @app.route("/patient/<int:id>")
 def patient_details(id):
